@@ -283,9 +283,84 @@ tr:hover td{background:#fafafa;}
 @media(max-width:900px){.form-wrap{grid-template-columns:1fr;}.prev-card{position:static;}.stats-row{grid-template-columns:repeat(3,1fr);}.id-card,.id-card-back{width:280px;height:170px;}}
 @media(max-width:580px){.stats-row{grid-template-columns:1fr 1fr;}.panel{padding:1rem;}}
 @media print{#login-screen,#public-view,#firebase-setup,.topbar,.sidebar,.brow,.cas,.prev-lbl,.panel-title,.saving-indicator{display:none!important;}.app-body{display:block;}.content{overflow:visible;}.panel.active{display:block!important;padding:.25rem;}.prev-card{box-shadow:none;padding:.25rem;}.id-card,.id-card-back{box-shadow:none;}}
+
+.lb-err.show{display:block;}
+
+
+/* ══ LOGIN ELEGANTE V2 ══ */
+#login{
+  position:fixed;inset:0;
+  background:linear-gradient(135deg,#0a0a0a 0%,#111827 50%,#0a0a0a 100%);
+  display:flex;align-items:center;justify-content:center;
+  z-index:999;padding:1rem;overflow:hidden;
+}
+#login::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(184,65,10,0.15) 0%,transparent 70%),
+             radial-gradient(ellipse 50% 40% at 90% 100%,rgba(212,168,67,0.08) 0%,transparent 60%);
+  pointer-events:none;
+}
+.login-box{
+  position:relative;z-index:1;
+  background:rgba(255,255,255,0.03);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:28px;
+  padding:2.5rem 2rem 2rem;
+  max-width:390px;width:100%;
+  text-align:center;
+  box-shadow:0 0 0 1px rgba(184,65,10,0.12),0 24px 64px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.login-logo{
+  width:110px;height:110px;
+  margin:0 auto 1rem;
+  display:flex;align-items:center;justify-content:center;
+}
+.login-logo img{
+  width:100%;height:100%;
+  object-fit:contain;
+  filter:drop-shadow(0 4px 16px rgba(184,65,10,0.3));
+}
+.lb-icon{font-size:0;margin:0;}
+.lb-title{font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:.25rem;letter-spacing:-.01em;}
+.lb-sub{font-size:.65rem;color:rgba(255,255,255,0.3);margin-bottom:1.75rem;letter-spacing:.08em;text-transform:uppercase;}
+.lb-input,.lb-select{
+  width:100%;box-sizing:border-box;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.09);
+  border-radius:13px;
+  padding:.78rem 1rem;
+  color:#fff;
+  font-family:'Montserrat',sans-serif;font-size:.875rem;
+  outline:none;margin-bottom:.65rem;
+  transition:border .2s,background .2s;
+}
+.lb-input:focus,.lb-select:focus{border-color:rgba(184,65,10,0.55);background:rgba(184,65,10,0.05);}
+.lb-input::placeholder{color:rgba(255,255,255,0.18);}
+.lb-select option{background:#1a1a1a;color:#fff;}
+.lb-btn{
+  width:100%;
+  background:linear-gradient(135deg,#B8410A,#E8651A);
+  border:none;border-radius:13px;
+  padding:.9rem;color:#fff;
+  font-family:'Montserrat',sans-serif;font-size:.9rem;font-weight:700;
+  cursor:pointer;letter-spacing:.02em;
+  box-shadow:0 6px 24px rgba(184,65,10,0.4);
+  transition:opacity .2s,transform .1s;
+}
+.lb-btn:hover{opacity:.88;}
+.lb-btn:active{transform:scale(.98);}
+.lb-err{
+  background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);
+  border-radius:10px;padding:.55rem;font-size:.72rem;color:#f87171;
+  margin-bottom:.65rem;display:none;
+}
+.lb-err.show{display:block;}
+
 </style>
 </head>
 <body>
+
 
 <!-- SAVING INDICATOR -->
 <div class="saving-indicator" id="saving-ind">
@@ -332,7 +407,7 @@ tr:hover td{background:#fafafa;}
         <div class="lc-error" id="err-admin">Contraseña incorrecta.</div>
         <input class="lc-input" id="adm-pass" type="password" placeholder="Contraseña admin" onkeydown="if(event.key==='Enter')loginAdmin()"/>
         <button class="lc-btn lc-btn-admin" onclick="loginAdmin()">Ingresar como Admin</button>
-        <div class="lc-note">Contraseñas: <strong>CorpAdmin2025</strong> · <strong>BancoFenix2025</strong></div>
+        <div class="lc-note"> · <strong></strong></div>
       </div>
       <div id="lf-personal" style="display:none">
         <div class="lc-title" style="color:var(--gold)">Portal Personal CORPOSEPI</div>
@@ -342,7 +417,7 @@ tr:hover td{background:#fafafa;}
           <option>Director / Rector</option><option>Coordinador</option><option>Docente</option>
           <option>Administrativo / Secretaría</option><option>Orientador / Psicólogo</option><option>Personal de Apoyo</option>
         </select>
-        <input class="lc-input" id="per-pass" type="password" placeholder="Contraseña: Personal2025" onkeydown="if(event.key==='Enter')loginPersonal()"/>
+        <input class="lc-input" id="per-pass" type="password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')loginPersonal()"/>
         <button class="lc-btn lc-btn-personal" onclick="loginPersonal()">Ingresar</button>
       </div>
       <div id="lf-student" style="display:none">
@@ -375,7 +450,7 @@ tr:hover td{background:#fafafa;}
 <div id="app">
   <div class="topbar">
     <div>
-      <div class="tb-title">CORPOSEPI</div>
+      <div class="tb-title" style="display:flex;align-items:center;gap:.5rem;"> CORPOSEPI</div>
       <div class="tb-sub">Carnets · NIT 901898846-6</div>
     </div>
     <div class="tb-right">
@@ -599,8 +674,8 @@ tr:hover td{background:#fafafa;}
 <script>
 // ── CONFIGURATION ──
 const BASE = 'https://beamish-squirrel-43c7b7.netlify.app';
-const ADMIN_PASS = ['CorpAdmin2025','BancoFenix2025'];
-const STAFF_PASS = 'Personal2025';
+const ADMIN_PASS = ['Deperavi1973@#@2026','Deperavi1973@#@2026'];
+const STAFF_PASS = 'DocentesCorposepi@#@2026';
 
 // ── FIREBASE STATE ──
 let fbDB = null;
