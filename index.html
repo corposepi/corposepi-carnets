@@ -128,6 +128,7 @@ tr:hover td{background:#fafafa;}
 .tb-btn.ok{border-color:rgba(74,222,128,.4);color:#166534;}
 .tb-btn.no{border-color:rgba(248,113,113,.4);color:#991b1b;}
 .tb-btn.ed{border-color:rgba(96,165,250,.4);color:#1e40af;}
+.tb-btn.del{border-color:rgba(248,113,113,.5);color:#991b1b;background:rgba(248,113,113,.06);}
 .mono{font-family:'DM Mono',monospace;font-size:.7rem;color:#888;}
 
 .form-wrap{display:grid;grid-template-columns:1fr 380px;gap:1.25rem;align-items:start;}
@@ -460,7 +461,8 @@ tr:hover td{background:#fafafa;}
   <div class="app-body">
     <div class="sidebar" id="sidebar">
       <div class="nb active" id="nb-dash" onclick="go('dashboard',this)">📊<span class="nb-tip">Dashboard</span></div>
-      <div class="nb" id="nb-crear" onclick="go('crear',this)">➕<span class="nb-tip">Crear carnet</span></div>
+      <div class="nb" id="nb-crear" onclick="go('crear',this)">🎓<span class="nb-tip">Crear estudiante</span></div>
+      <div class="nb" id="nb-crear-staff" onclick="go('crear-staff',this)">➕<span class="nb-tip">Crear personal</span></div>
       <div class="nb" id="nb-staff" onclick="go('staff',this)">👩‍🏫<span class="nb-tip">Personal</span></div>
       <div class="nb" id="nb-pend" onclick="go('pend',this)">⏳<span class="nb-tip">Pendientes</span></div>
       <div class="nb" id="nb-todos" onclick="go('todos',this)">👥<span class="nb-tip">Todos</span></div>
@@ -562,7 +564,55 @@ tr:hover td{background:#fafafa;}
       </div>
 
       <!-- STAFF -->
-      <div class="panel" id="panel-staff">
+      <div class="panel" id="panel-crear-staff">
+        <div class="panel-title">➕ Crear carnet de personal</div>
+        <div class="form-wrap">
+          <div>
+            <div class="fc">
+              <div class="fc-sec"><div class="fc-sec-ttl">📷 Foto</div>
+                <div class="pu" onclick="document.getElementById('ph-staff').click()">
+                  <input type="file" id="ph-staff" accept="image/*" onchange="loadPh(this,'staff-new')">
+                  <img id="ph-prev-staff" class="pu-prev"/>
+                  <div id="ph-ph-staff"><div style="font-size:1.8rem;margin-bottom:.3rem">📷</div><div style="font-size:.68rem;color:#aaa">Subir foto · JPG/PNG</div></div>
+                </div>
+              </div>
+              <div class="fc-sec"><div class="fc-sec-ttl">👤 Datos personales</div>
+                <div class="fgrid">
+                  <div class="fg"><label class="fg-lbl">Nombres</label><input class="fi" id="sn" placeholder="Carlos Alberto"/></div>
+                  <div class="fg"><label class="fg-lbl">Apellidos</label><input class="fi" id="sa" placeholder="Gómez Torres"/></div>
+                  <div class="fg"><label class="fg-lbl">Tipo doc.</label>
+                    <select class="fs-sel" id="std">
+                      <option value="C.C.">C.C.</option><option value="C.E.">C.E.</option><option value="PAS">Pasaporte</option><option value="T.I.">T.I.</option>
+                    </select>
+                  </div>
+                  <div class="fg"><label class="fg-lbl">Núm. documento</label><input class="fi" id="snd" placeholder="12345678"/></div>
+                  <div class="fg ffull"><label class="fg-lbl">Celular / WhatsApp</label><input class="fi" id="scel" placeholder="3001234567"/></div>
+                </div>
+              </div>
+              <div class="fc-sec"><div class="fc-sec-ttl">🏫 Cargo</div>
+                <div class="fgrid">
+                  <div class="fg ffull"><label class="fg-lbl">Cargo</label>
+                    <select class="fs-sel" id="scargo">
+                      <option>Director / Rector</option>
+                      <option>Coordinador</option>
+                      <option>Docente</option>
+                      <option>Administrativo / Secretaría</option>
+                      <option>Orientador / Psicólogo</option>
+                      <option>Personal de Apoyo</option>
+                    </select>
+                  </div>
+                  <div class="fg ffull"><label class="fg-lbl">Área / Especialidad</label><input class="fi" id="sarea" placeholder="Matemáticas, Lengua, etc."/></div>
+                  <div class="fg"><label class="fg-lbl">Vigencia</label><input class="fi" id="svig" placeholder="Dic 2026"/></div>
+                  <div class="fg ffull"><label class="fg-lbl">Billetera MetaMask</label><input class="fi" id="swal" placeholder="0x..."/></div>
+                </div>
+              </div>
+              <div class="brow"><button class="btn-corp" onclick="saveStaffCarnet()">🪪 Guardar carnet de personal</button><button class="btn-out" onclick="clearStaffForm()">↩ Limpiar</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+            <div class="panel" id="panel-staff">
         <div class="panel-title">👩‍🏫 Personal</div>
         <div class="sfrow">
           <input class="sfi" id="search-staff" placeholder="🔍 Buscar..." oninput="renderStaffTable()"/>
@@ -896,7 +946,7 @@ function switchTab(t,el){
 function loginAdmin(){
   if(ADMIN_PASS.includes(document.getElementById('adm-pass').value)){
     role='admin'; startApp('admin','Administrador','rb-admin');
-    showNav(['nb-dash','nb-crear','nb-staff','nb-pend','nb-todos','nb-exp']);
+    showNav(['nb-dash','nb-crear','nb-crear-staff','nb-staff','nb-pend','nb-todos','nb-exp']);
     go('dashboard',document.getElementById('nb-dash'));
     renderDash(); renderAllTable(); renderPendTable(); renderStaffTable();
   } else showErr('admin');
@@ -954,6 +1004,7 @@ function loadPh(input,ctx){
   r.onload=e=>{
     const d=e.target.result;
     if(ctx==='admin'){ admPhoto=d; showPrevPhoto('ph-prev-admin','ph-ph-admin',d); upPrev(); }
+    else if(ctx==='staff-new'){ staffPhoto=d; showPrevPhoto('ph-prev-staff','ph-ph-staff',d); }
     else if(ctx==='me'){ mePhoto=d; showPrevPhoto('ph-prev-me','ph-ph-me',d); if(myIdx!==null){ const arr=myType==='staff'?localDB.staff:localDB.students; arr[myIdx].photo=d; save(); renderMyCarnet(); } }
   };
   r.readAsDataURL(f);
@@ -1036,6 +1087,38 @@ async function saveCarnet(){
   navigator.clipboard.writeText(BASE+'/?id='+s.id).catch(()=>{});
 }
 
+function saveStaffCarnet(){
+  const n=document.getElementById('sn').value.trim();
+  const a=document.getElementById('sa').value.trim();
+  const td=document.getElementById('std').value;
+  const nd=document.getElementById('snd').value.trim();
+  const cel=document.getElementById('scel').value.trim();
+  const cargo=document.getElementById('scargo').value;
+  const area=document.getElementById('sarea').value.trim();
+  const vig=document.getElementById('svig').value.trim();
+  const wal=document.getElementById('swal').value.trim();
+  if(!n||!a){showToast('⚠️ Ingresa nombre y apellidos'); return;}
+  if(!nd){showToast('⚠️ Ingresa el número de documento'); return;}
+  const id='CORP-P-'+String(counter.p).padStart(3,'0');
+  counter.p++;
+  const s={id,nombres:n,apellidos:a,tipodoc:td,numdoc:nd,cel,cargo,area,vigencia:vig,fnx:'0',wallet:wal,photo:staffPhoto||null,theme:getStaffTheme(cargo),status:'active',fecha:new Date().toLocaleDateString('es-CO'),type:'staff'};
+  localDB.staff.push(s);
+  save();
+  showToast('✅ Carnet de personal guardado · ID: '+id);
+  staffPhoto=null;
+  clearStaffForm();
+  renderStaffTable();
+}
+function clearStaffForm(){
+  ['sn','sa','snd','scel','sarea','svig','swal'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  document.getElementById('std').value='C.C.';
+  document.getElementById('scargo').value='Docente';
+  staffPhoto=null;
+  const prev=document.getElementById('ph-prev-staff');
+  const ph=document.getElementById('ph-ph-staff');
+  if(prev){prev.src='';prev.style.display='none';}
+  if(ph) ph.style.display='flex';
+}
 function clearAdminForm(){
   ['an','aa','and','acel','agr','avig','awal'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('afnx').value='0'; admPhoto=null;
@@ -1065,7 +1148,7 @@ function renderAllTable(){
   all=all.filter(s=>{const mq=!q||(s.nombres+' '+s.apellidos+' '+s.id).toLowerCase().includes(q);const mt=!ft||s._t===ft;const ms=!fs||s.status===fs;return mq&&mt&&ms;});
   const tb=document.getElementById('all-body');
   if(!all.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:#aaa;padding:1.5rem">Sin resultados</td></tr>';return;}
-  tb.innerHTML=all.map(s=>{const[c,l]=statusBadge(s.status);return`<tr><td class="mono">${s.id}</td><td style="font-weight:600">${s.nombres} ${s.apellidos}</td><td><span class="tbadge ${s._t==='staff'?'t-per':'t-est'}">${s._t==='staff'?'👩‍🏫 Personal':'🎓 Estudiante'}</span></td><td style="font-size:.72rem">${s.cargo||s.nivel||'—'}</td><td><span class="tbadge ${c}">${l}</span></td><td style="color:var(--corp);font-weight:600">${parseFloat(s.fnx||0).toFixed(0)}</td><td style="display:flex;gap:.25rem;flex-wrap:wrap"><button class="tb-btn ed" onclick="openEdit('${s._t}',${s._i})">✏️</button>${s.status!=='active'?`<button class="tb-btn ok" onclick="chStatus('${s._t}',${s._i},'active')">✅</button>`:''}${s.status!=='blocked'?`<button class="tb-btn no" onclick="chStatus('${s._t}',${s._i},'blocked')">🚫</button>`:''}<button class="tb-btn" onclick="navigator.clipboard.writeText('${BASE}/?id=${s.id}').then(()=>showToast('🔗 Link copiado'))">🔗</button></td></tr>`;}).join('');
+  tb.innerHTML=all.map(s=>{const[c,l]=statusBadge(s.status);return`<tr><td class="mono">${s.id}</td><td style="font-weight:600">${s.nombres} ${s.apellidos}</td><td><span class="tbadge ${s._t==='staff'?'t-per':'t-est'}">${s._t==='staff'?'👩‍🏫 Personal':'🎓 Estudiante'}</span></td><td style="font-size:.72rem">${s.cargo||s.nivel||'—'}</td><td><span class="tbadge ${c}">${l}</span></td><td style="color:var(--corp);font-weight:600">${parseFloat(s.fnx||0).toFixed(0)}</td><td style="display:flex;gap:.25rem;flex-wrap:wrap"><button class="tb-btn ed" onclick="openEdit('${s._t}',${s._i})">✏️</button>${s.status!=='active'?`<button class="tb-btn ok" onclick="chStatus('${s._t}',${s._i},'active')">✅</button>`:''}${s.status!=='blocked'?`<button class="tb-btn no" onclick="chStatus('${s._t}',${s._i},'blocked')">🚫</button>`:''}<button class="tb-btn" onclick="navigator.clipboard.writeText('${BASE}/?id=${s.id}').then(()=>showToast('🔗 Link copiado'))">🔗</button><button class="tb-btn del" onclick="deleteCarnet('${s._t}',${s._i})">🗑️</button></td></tr>`;}).join('');
 }
 
 function renderStaffTable(){
@@ -1074,16 +1157,29 @@ function renderStaffTable(){
   let list=localDB.staff.map((s,i)=>({...s,_i:i})).filter(s=>{const mq=!q||(s.nombres+' '+s.apellidos+' '+s.id).toLowerCase().includes(q);const mc=!fc||s.cargo===fc;return mq&&mc;});
   const tb=document.getElementById('staff-body');
   if(!list.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1.5rem">Sin personal</td></tr>';return;}
-  tb.innerHTML=list.map(s=>{const[c,l]=statusBadge(s.status);return`<tr><td class="mono">${s.id}</td><td style="font-weight:600">${s.nombres||'(por completar)'} ${s.apellidos||''}</td><td><span class="tbadge t-per">${s.cargo}</span></td><td class="mono">${s.tipodoc} ${s.numdoc||'—'}</td><td><span class="tbadge ${c}">${l}</span></td><td style="display:flex;gap:.25rem"><button class="tb-btn ed" onclick="openEdit('staff',${s._i})">✏️</button>${s.status!=='active'?`<button class="tb-btn ok" onclick="chStatus('staff',${s._i},'active')">✅</button>`:''}${s.status!=='blocked'?`<button class="tb-btn no" onclick="chStatus('staff',${s._i},'blocked')">🚫</button>`:''}</td></tr>`;}).join('');
+  tb.innerHTML=list.map(s=>{const[c,l]=statusBadge(s.status);return`<tr><td class="mono">${s.id}</td><td style="font-weight:600">${s.nombres||'(por completar)'} ${s.apellidos||''}</td><td><span class="tbadge t-per">${s.cargo}</span></td><td class="mono">${s.tipodoc} ${s.numdoc||'—'}</td><td><span class="tbadge ${c}">${l}</span></td><td style="display:flex;gap:.25rem"><button class="tb-btn ed" onclick="openEdit('staff',${s._i})">✏️</button>${s.status!=='active'?`<button class="tb-btn ok" onclick="chStatus('staff',${s._i},'active')">✅</button>`:''}${s.status!=='blocked'?`<button class="tb-btn no" onclick="chStatus('staff',${s._i},'blocked')">🚫</button>`:''}<button class="tb-btn del" onclick="deleteCarnet('staff',${s._i})">🗑️</button></td></tr>`;}).join('');
 }
 
 function renderPendTable(){
   const all=[...localDB.students.map((s,i)=>({...s,_i:i,_t:'student'})),...localDB.staff.map((s,i)=>({...s,_i:i,_t:'staff'}))].filter(s=>s.status==='pending');
   const tb=document.getElementById('pend-body');
   if(!all.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1.5rem">¡Sin pendientes! ✅</td></tr>';return;}
-  tb.innerHTML=all.map(s=>`<tr><td class="mono">${s.id}</td><td style="font-weight:600">${s.nombres||'(por completar)'} ${s.apellidos||''}</td><td><span class="tbadge ${s._t==='staff'?'t-per':'t-est'}">${s._t==='staff'?'Personal':'Estudiante'}</span></td><td style="font-size:.72rem">${s.cargo||s.nivel||'—'}</td><td class="mono">${s.tipodoc||''} ${s.numdoc||'—'}</td><td style="display:flex;gap:.3rem"><button class="btn-green" onclick="chStatus('${s._t}',${s._i},'active')">✅ Aprobar</button><button class="btn-red" onclick="chStatus('${s._t}',${s._i},'blocked')">🚫 Rechazar</button></td></tr>`).join('');
+  tb.innerHTML=all.map(s=>`<tr><td class="mono">${s.id}</td><td style="font-weight:600">${s.nombres||'(por completar)'} ${s.apellidos||''}</td><td><span class="tbadge ${s._t==='staff'?'t-per':'t-est'}">${s._t==='staff'?'Personal':'Estudiante'}</span></td><td style="font-size:.72rem">${s.cargo||s.nivel||'—'}</td><td class="mono">${s.tipodoc||''} ${s.numdoc||'—'}</td><td style="display:flex;gap:.3rem"><button class="btn-green" onclick="chStatus('${s._t}',${s._i},'active')">✅ Aprobar</button><button class="btn-red" onclick="chStatus('${s._t}',${s._i},'blocked')">🚫 Rechazar</button><button class="tb-btn del" onclick="deleteCarnet('${s._t}',${s._i})">🗑️ Eliminar</button></td></tr>`).join('');
 }
 
+function deleteCarnet(t,i){
+  const arr = t==='staff' ? localDB.staff : localDB.students;
+  const s = arr[i];
+  if(!s) return;
+  const nombre = (s.nombres||'') + ' ' + (s.apellidos||'');
+  if(!confirm('¿Eliminar el carnet de ' + nombre.trim() + ' (' + s.id + ')? Esta acción no se puede deshacer.')) return;
+  arr.splice(i,1);
+  save();
+  showToast('🗑️ Carnet eliminado');
+  renderStaffTable();
+  renderAllTable();
+  renderDash();
+}
 async function chStatus(t,i,st){
   const arr=t==='staff'?localDB.staff:localDB.students;
   arr[i].status=st; await save();
