@@ -730,12 +730,15 @@ let fbDB = null;
 let fbEnabled = false;
 
 // ── LOCAL DB FALLBACK ──
-let localDB = JSON.parse(localStorage.getItem('corp_db')||'{"students":[],"staff":[]}');
+let localDB;
+try{localDB=JSON.parse(localStorage.getItem('corp_db')||'{"students":[],"staff":[]}');}catch(e){localDB={students:[],staff:[]};}
+if(!localDB.students)localDB.students=[];
+if(!localDB.staff)localDB.staff=[];
 
 // ── APP STATE ──
 let role=null, myIdx=null, myType=null;
-let admTheme='dark', admPhoto=null, meTheme='dark', mePhoto=null;
-let counter={s:localDB.students.length+1, p:localDB.staff.length+1};
+let admTheme='dark', admPhoto=null, meTheme='dark', mePhoto=null, staffPhoto=null;
+let counter={s:(localDB.students||[]).length+1, p:(localDB.staff||[]).length+1};
 let editIdx=null, editType=null;
 
 // ── FIREBASE HARDCODED CONFIG ──
@@ -774,8 +777,8 @@ const FB_CONFIG = {
           localDB = data;
           if(!localDB.students) localDB.students = [];
           if(!localDB.staff) localDB.staff = [];
-          counter.s = localDB.students.length + 1;
-          counter.p = localDB.staff.length + 1;
+          counter.s = (localDB.students||[]).length + 1;
+          counter.p = (localDB.staff||[]).length + 1;
           localStorage.setItem('corp_db', JSON.stringify(localDB));
         }
         showDbStatus(true);
@@ -814,8 +817,8 @@ function connectFirebase(cfg){
       const data = snap.val();
       if(data){
         localDB = data;
-        counter.s = localDB.students.length + 1;
-        counter.p = localDB.staff.length + 1;
+        counter.s = (localDB.students||[]).length + 1;
+        counter.p = (localDB.staff||[]).length + 1;
       }
       showDbStatus(true);
       document.getElementById('firebase-setup').style.display='none';
@@ -1102,9 +1105,22 @@ function saveStaffCarnet(){
   const id='CORP-P-'+String(counter.p).padStart(3,'0');
   counter.p++;
   const s={id,nombres:n,apellidos:a,tipodoc:td,numdoc:nd,cel,cargo,area,vigencia:vig,fnx:'0',wallet:wal,photo:staffPhoto||null,theme:getStaffTheme(cargo),status:'active',fecha:new Date().toLocaleDateString('es-CO'),type:'staff'};
+  if(!localDB.staff) localDB.staff=[];
   localDB.staff.push(s);
   save();
   showToast('✅ Carnet de personal guardado · ID: '+id);
+  // Mostrar preview del carnet creado
+  try{
+    const th=getStaffTheme(cargo);
+    const prev=document.createElement('div');
+    prev.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--dark2);border:2px solid var(--corp);border-radius:18px;padding:1.5rem;text-align:center;max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.8);';
+    prev.innerHTML='<div style="font-size:.85rem;font-weight:700;color:var(--corp3);margin-bottom:.5rem;">✅ Carnet creado — '+id+'</div>'+
+      '<div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">'+
+      '<div class="id-card '+th+'" style="width:280px;height:170px;border-radius:10px;position:relative;overflow:hidden;">'+buildFront(s,true,th)+'</div></div>'+
+      '<button onclick="this.parentNode.remove()" style="margin-top:1rem;background:var(--corp);border:none;border-radius:8px;padding:.5rem 1.25rem;color:#fff;font-weight:700;cursor:pointer;">✓ Cerrar</button>';
+    document.body.appendChild(prev);
+    setTimeout(()=>{if(prev.parentNode)prev.remove();},6000);
+  }catch(e){}
   staffPhoto=null;
   clearStaffForm();
   renderStaffTable();
@@ -1154,7 +1170,7 @@ function renderAllTable(){
 function renderStaffTable(){
   const q=(document.getElementById('search-staff')?.value||'').toLowerCase();
   const fc=document.getElementById('filt-cargo')?.value||'';
-  let list=localDB.staff.map((s,i)=>({...s,_i:i})).filter(s=>{const mq=!q||(s.nombres+' '+s.apellidos+' '+s.id).toLowerCase().includes(q);const mc=!fc||s.cargo===fc;return mq&&mc;});
+  let list=(localDB.staff||[]).map((s,i)=>({...s,_i:i})).filter(s=>{const mq=!q||(s.nombres+' '+s.apellidos+' '+s.id).toLowerCase().includes(q);const mc=!fc||s.cargo===fc;return mq&&mc;});
   const tb=document.getElementById('staff-body');
   if(!list.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1.5rem">Sin personal</td></tr>';return;}
   tb.innerHTML=list.map(s=>{const[c,l]=statusBadge(s.status);return`<tr><td class="mono">${s.id}</td><td style="font-weight:600">${s.nombres||'(por completar)'} ${s.apellidos||''}</td><td><span class="tbadge t-per">${s.cargo}</span></td><td class="mono">${s.tipodoc} ${s.numdoc||'—'}</td><td><span class="tbadge ${c}">${l}</span></td><td style="display:flex;gap:.25rem"><button class="tb-btn ed" onclick="openEdit('staff',${s._i})">✏️</button>${s.status!=='active'?`<button class="tb-btn ok" onclick="chStatus('staff',${s._i},'active')">✅</button>`:''}${s.status!=='blocked'?`<button class="tb-btn no" onclick="chStatus('staff',${s._i},'blocked')">🚫</button>`:''}<button class="tb-btn del" onclick="deleteCarnet('staff',${s._i})">🗑️</button></td></tr>`;}).join('');
