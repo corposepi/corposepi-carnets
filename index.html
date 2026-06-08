@@ -710,6 +710,7 @@ tr:hover td{background:#fafafa;}
       <div class="fg"><label class="fg-lbl">Grado / Área</label><input class="fi" id="e-gr"/></div>
       <div class="fg"><label class="fg-lbl">Vigencia</label><input class="fi" id="e-vig"/></div>
       <div class="fg"><label class="fg-lbl">FNX</label><input class="fi" id="e-fnx" type="number"/></div>
+      <div class="fg ffull"><label class="fg-lbl">Correo institucional</label><input class="fi" id="e-correo" type="email" placeholder="@corposepi.org"/></div>
       <div class="fg ffull"><label class="fg-lbl">Billetera MetaMask</label><input class="fi" id="e-wal"/></div>
     </div>
     <div class="modal-acts">
@@ -1229,7 +1230,7 @@ async function chStatus(t,i,st){
 }
 
 // ── EDIT MODAL ──
-function openEdit(t,i){ editIdx=i; editType=t; const s=(t==='staff'?localDB.staff:localDB.students)[i]; document.getElementById('e-nom').value=s.nombres||''; document.getElementById('e-ape').value=s.apellidos||''; document.getElementById('e-prog').value=s.cargo||s.nivel||''; document.getElementById('e-gr').value=s.grado||s.area||''; document.getElementById('e-vig').value=s.vigencia||''; document.getElementById('e-fnx').value=s.fnx||0; document.getElementById('e-wal').value=s.wallet||''; document.getElementById('edit-modal').classList.add('show'); }
+function openEdit(t,i){ editIdx=i; editType=t; const s=(t==='staff'?localDB.staff:localDB.students)[i]; document.getElementById('e-nom').value=s.nombres||''; document.getElementById('e-ape').value=s.apellidos||''; document.getElementById('e-prog').value=s.cargo||s.nivel||''; document.getElementById('e-gr').value=s.grado||s.area||''; document.getElementById('e-vig').value=s.vigencia||''; document.getElementById('e-fnx').value=s.fnx||0; document.getElementById('e-correo').value=s.correo||''; document.getElementById('e-wal').value=s.wallet||''; document.getElementById('edit-modal').classList.add('show'); }
 function closeModal(){ document.getElementById('edit-modal').classList.remove('show'); editIdx=null; editType=null; }
 async function saveEdit(){
   if(editIdx===null)return;
@@ -1237,7 +1238,7 @@ async function saveEdit(){
   s.nombres=document.getElementById('e-nom').value.trim(); s.apellidos=document.getElementById('e-ape').value.trim();
   if(editType==='staff')s.cargo=document.getElementById('e-prog').value; else s.nivel=document.getElementById('e-prog').value;
   if(editType==='staff')s.area=document.getElementById('e-gr').value; else s.grado=document.getElementById('e-gr').value;
-  s.vigencia=document.getElementById('e-vig').value; s.fnx=document.getElementById('e-fnx').value; s.wallet=document.getElementById('e-wal').value;
+  s.vigencia=document.getElementById('e-vig').value; s.fnx=document.getElementById('e-fnx').value; s.correo=document.getElementById('e-correo').value.trim(); s.wallet=document.getElementById('e-wal').value;
   await save(); renderDash(); renderAllTable(); renderStaffTable(); closeModal(); showToast('✅ Carnet actualizado');
 }
 
