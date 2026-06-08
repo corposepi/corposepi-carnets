@@ -512,6 +512,7 @@ tr:hover td{background:#fafafa;}
                   </div>
                   <div class="fg"><label class="fg-lbl">Núm. documento</label><input class="fi" id="and" placeholder="1234567890" oninput="upPrev()"/></div>
                   <div class="fg ffull"><label class="fg-lbl">Celular / WhatsApp</label><input class="fi" id="acel" placeholder="3001234567"/></div>
+                  <div class="fg ffull"><label class="fg-lbl">Correo institucional</label><input class="fi" id="acorreo" placeholder="estudiante@corposepi.org" type="email"/></div>
                 </div>
               </div>
               <div class="fc-sec"><div class="fc-sec-ttl">🏫 Programa</div>
@@ -587,6 +588,7 @@ tr:hover td{background:#fafafa;}
                   </div>
                   <div class="fg"><label class="fg-lbl">Núm. documento</label><input class="fi" id="snd" placeholder="12345678"/></div>
                   <div class="fg ffull"><label class="fg-lbl">Celular / WhatsApp</label><input class="fi" id="scel" placeholder="3001234567"/></div>
+                  <div class="fg ffull"><label class="fg-lbl">Correo institucional</label><input class="fi" id="scorreo" placeholder="docente@corposepi.org" type="email"/></div>
                 </div>
               </div>
               <div class="fc-sec"><div class="fc-sec-ttl">🏫 Cargo</div>
@@ -1104,7 +1106,7 @@ function genQR(containerId,data,size){ const el=document.getElementById(containe
 async function saveCarnet(){
   const nom=document.getElementById('an').value.trim(); const ape=document.getElementById('aa').value.trim();
   if(!nom||!ape){showToast('⚠️ Ingresa nombre y apellidos');return;}
-  const s={id:genId(),nombres:nom,apellidos:ape,type:'student',tipodoc:document.getElementById('atd').value,numdoc:document.getElementById('and').value,cel:document.getElementById('acel').value,nivel:document.getElementById('aniv').value,grado:document.getElementById('agr').value,jornada:document.getElementById('ajor').value,ano:document.getElementById('aano').value,vigencia:document.getElementById('avig').value,fnx:document.getElementById('afnx').value||'0',wallet:document.getElementById('awal').value,photo:admPhoto,theme:admTheme,status:'active',fecha:new Date().toLocaleDateString('es-CO')};
+  const s={id:genId(),nombres:nom,apellidos:ape,type:'student',tipodoc:document.getElementById('atd').value,numdoc:document.getElementById('and').value,cel:document.getElementById('acel').value,correo:document.getElementById('acorreo').value.trim(),nivel:document.getElementById('aniv').value,grado:document.getElementById('agr').value,jornada:document.getElementById('ajor').value,ano:document.getElementById('aano').value,vigencia:document.getElementById('avig').value,fnx:document.getElementById('afnx').value||'0',wallet:document.getElementById('awal').value,photo:admPhoto,theme:admTheme,status:'active',fecha:new Date().toLocaleDateString('es-CO')};
   localDB.students.push(s); counter.s++; await save();
   renderDash(); renderAllTable(); renderPendTable();
   showToast('✅ Carnet '+s.id+' guardado · Link: '+BASE+'/?id='+s.id);
@@ -1126,7 +1128,8 @@ function saveStaffCarnet(){
   if(!nd){showToast('⚠️ Ingresa el número de documento'); return;}
   const id='CORP-P-'+String(counter.p).padStart(3,'0');
   counter.p++;
-  const s={id,nombres:n,apellidos:a,tipodoc:td,numdoc:nd,cel,cargo,area,vigencia:vig,fnx:'0',wallet:wal,photo:staffPhoto||null,theme:getStaffTheme(cargo),status:'active',fecha:new Date().toLocaleDateString('es-CO'),type:'staff'};
+  const correo=document.getElementById('scorreo').value.trim();
+  const s={id,nombres:n,apellidos:a,tipodoc:td,numdoc:nd,cel,correo,cargo,area,vigencia:vig,fnx:'0',wallet:wal,photo:staffPhoto||null,theme:getStaffTheme(cargo),status:'active',fecha:new Date().toLocaleDateString('es-CO'),type:'staff'};
   if(!localDB.staff) localDB.staff=[];
   localDB.staff.push(s);
   save();
@@ -1148,7 +1151,7 @@ function saveStaffCarnet(){
   renderStaffTable();
 }
 function clearStaffForm(){
-  ['sn','sa','snd','scel','sarea','svig','swal'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  ['sn','sa','snd','scel','scorreo','sarea','svig','swal'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
   document.getElementById('std').value='C.C.';
   document.getElementById('scargo').value='Docente';
   staffPhoto=null;
@@ -1158,7 +1161,7 @@ function clearStaffForm(){
   if(ph) ph.style.display='flex';
 }
 function clearAdminForm(){
-  ['an','aa','and','acel','agr','avig','awal'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['an','aa','and','acel','acorreo','agr','avig','awal'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('afnx').value='0'; admPhoto=null;
   document.getElementById('ph-prev-admin').style.display='none'; document.getElementById('ph-ph-admin').style.display='block';
   renderPreview();
