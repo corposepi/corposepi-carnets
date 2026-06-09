@@ -866,18 +866,26 @@ async function save(){
       // cambios de fnx/cpi hechos por asistencia, datafono o sistema.
       const liveSnap = await fbDB.ref('corposepi').once('value');
       const liveData = liveSnap.val()||{};
-      const liveStudents = liveData.students||[];
-      const liveStaff    = liveData.staff||[];
+      // Normalizar staff/students de Firebase (puede ser array u objeto con claves numéricas)
+      const rawStudents = liveData.students||[];
+      const rawStaff    = liveData.staff||[];
+      const liveStudents = Array.isArray(rawStudents) ? rawStudents : Object.values(rawStudents);
+      const liveStaff    = Array.isArray(rawStaff)    ? rawStaff    : Object.values(rawStaff);
       const merged = {
         students: localDB.students.map((s,i)=>{
           if(!s) return s;
           const live = liveStudents.find(ls=>ls&&ls.id===s.id);
-          return live ? {...s, fnx: live.fnx??s.fnx, cpi: live.cpi??s.cpi} : s;
+          // Primero spread de Firebase (conserva campos extra de aprende),
+          // luego spread local (actualiza datos del carnet),
+          // al final saldos de Firebase ganan para no pisar transacciones.
+          return live ? {...live, ...s, fnx: live.fnx??s.fnx, cpi: live.cpi??s.cpi} : s;
         }),
         staff: localDB.staff.map((s,i)=>{
           if(!s) return s;
           const live = liveStaff.find(ls=>ls&&ls.id===s.id);
-          return live ? {...s, fnx: live.fnx??s.fnx, cpi: live.cpi??s.cpi} : s;
+          // Igual: conservar bloques, talleres, acciones, meetUrl y demás campos
+          // que aprende agrega al perfil del docente.
+          return live ? {...live, ...s, fnx: live.fnx??s.fnx, cpi: live.cpi??s.cpi} : s;
         })
       };
       await fbDB.ref('corposepi').set(merged);
