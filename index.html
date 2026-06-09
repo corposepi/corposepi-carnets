@@ -869,29 +869,36 @@ async function save(){
       // Normalizar staff/students de Firebase (puede ser array u objeto con claves numéricas)
       const rawStudents = liveData.students||[];
       const rawStaff    = liveData.staff||[];
-      const liveStudents = Array.isArray(rawStudents) ? rawStudents : Object.values(rawStudents);
-      const liveStaff    = Array.isArray(rawStaff)    ? rawStaff    : Object.values(rawStaff);
+      const liveStudents = (Array.isArray(rawStudents) ? rawStudents : Object.values(rawStudents)).filter(Boolean);
+      const liveStaff    = (Array.isArray(rawStaff)    ? rawStaff    : Object.values(rawStaff)).filter(Boolean);
+
+      // MERGE SEGURO: partir de Firebase como fuente de verdad.
+      // Actualizar entradas existentes (por id), agregar nuevas del local.
+      // NUNCA eliminar entradas que están en Firebase pero no en local.
+      function mergeList(firebaseList, localList){
+        const result = [...firebaseList]; // copia de Firebase
+        (localList||[]).forEach(s=>{
+          if(!s) return;
+          const idx = result.findIndex(r=>r&&r.id===s.id);
+          if(idx>=0){
+            // Actualizar: Firebase primero (conserva bloques/talleres/acciones),
+            // luego local (actualiza nombre, cargo, etc.), saldos de Firebase ganan.
+            result[idx]={...result[idx],...s,fnx:result[idx].fnx??s.fnx,cpi:result[idx].cpi??s.cpi};
+          } else {
+            result.push(s); // nuevo: agregar al final
+          }
+        });
+        return result;
+      }
+
       const merged = {
-        students: localDB.students.map((s,i)=>{
-          if(!s) return s;
-          const live = liveStudents.find(ls=>ls&&ls.id===s.id);
-          // Primero spread de Firebase (conserva campos extra de aprende),
-          // luego spread local (actualiza datos del carnet),
-          // al final saldos de Firebase ganan para no pisar transacciones.
-          return live ? {...live, ...s, fnx: live.fnx??s.fnx, cpi: live.cpi??s.cpi} : s;
-        }),
-        staff: localDB.staff.map((s,i)=>{
-          if(!s) return s;
-          const live = liveStaff.find(ls=>ls&&ls.id===s.id);
-          // Igual: conservar bloques, talleres, acciones, meetUrl y demás campos
-          // que aprende agrega al perfil del docente.
-          return live ? {...live, ...s, fnx: live.fnx??s.fnx, cpi: live.cpi??s.cpi} : s;
-        })
+        students: mergeList(liveStudents, localDB.students),
+        staff:    mergeList(liveStaff,    localDB.staff),
       };
-      await fbDB.ref('corposepi').set(merged);
-      // Actualizar también localDB con los saldos reales
+      // Sincronizar localDB con el merged para que quede completo
       localDB.students = merged.students;
       localDB.staff    = merged.staff;
+      await fbDB.ref('corposepi').set(merged);
       localStorage.setItem('corp_db', JSON.stringify(localDB));
       dot.classList.add('saved');
       txt.textContent = '✓ Guardado en la nube';
