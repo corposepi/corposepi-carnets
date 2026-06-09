@@ -1187,6 +1187,19 @@ async function saveStaffCarnet(){
   const s={id,nombres:n,apellidos:a,tipodoc:td,numdoc:nd,cel,correo,cargo,area,vigencia:vig,fnx:'0',wallet:wal,photo:staffPhoto||null,theme:getStaffTheme(cargo),status:'active',fecha:new Date().toLocaleDateString('es-CO'),type:'staff'};
   if(!localDB.staff) localDB.staff=[];
   localDB.staff.push(s);
+  // Guardar directo en Firebase como respaldo inmediato
+  if(fbEnabled&&fbDB){
+    try{
+      const snapSt=await fbDB.ref('corposepi/staff').once('value');
+      const rawSt=snapSt.val();
+      const arrSt=(Array.isArray(rawSt)?rawSt:Object.values(rawSt||{})).filter(Boolean);
+      // Verificar que no exista ya ese ID
+      if(!arrSt.find(x=>x&&x.id===s.id)){
+        arrSt.push(s);
+        await fbDB.ref('corposepi/staff').set(arrSt);
+      }
+    }catch(e){ console.error('Error guardando staff directo:',e); }
+  }
   await save();
   showToast('✅ Carnet de personal guardado · ID: '+id);
   // Mostrar preview del carnet creado
