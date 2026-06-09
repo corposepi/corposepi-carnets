@@ -1033,7 +1033,27 @@ function showErr(ctx,msg){ const el=document.getElementById('err-'+ctx); if(msg)
 function go(id,navEl){ document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nb').forEach(n=>n.classList.remove('active')); document.getElementById('panel-'+id).classList.add('active'); if(navEl)navEl.classList.add('active'); }
 
 // ── UTILS ──
-function genId(){ const y=document.getElementById('aano')?.value||2025; return `CORP-${y}-${String(counter.s).padStart(4,'0')}`; }
+async function genId(){
+  const y=document.getElementById('aano')?.value||new Date().getFullYear();
+  let nextNum=1;
+  if(fbEnabled&&fbDB){
+    try{
+      const snap=await fbDB.ref('corposepi/students').once('value');
+      const raw=snap.val();
+      const lista=(Array.isArray(raw)?raw:Object.values(raw||{})).filter(Boolean);
+      lista.forEach(s=>{
+        const m=String(s.id||'').match(new RegExp('CORP-'+y+'-(\\d+)'));
+        if(m) nextNum=Math.max(nextNum,parseInt(m[1])+1);
+      });
+    }catch(e){
+      nextNum=(localDB.students||[]).filter(Boolean).length+1;
+    }
+  } else {
+    nextNum=(localDB.students||[]).filter(Boolean).length+1;
+  }
+  counter.s=nextNum;
+  return `CORP-${y}-${String(nextNum).padStart(4,'0')}`;
+}
 function getLvlType(n){ if(!n)return 'p'; if(n.includes('Preescolar'))return 'e'; if(n.includes('Primaria'))return 'p'; if(n.includes('Secundaria'))return 's'; if(n.includes('Media'))return 'm'; if(n.includes('Adultos')||n.includes('Bachillerato'))return 'a'; return 'c'; }
 function getLvlLbl(n){ return{e:'PREESCOLAR',p:'PRIMARIA',s:'SECUNDARIA',m:'MEDIA ACAD.',a:'ADULTOS',c:'CURSO'}[getLvlType(n)]||'CURSO'; }
 function getBadge(t){ return{e:'pb-e',p:'pb-p',s:'pb-s',m:'pb-m',a:'pb-a',c:'pb-c'}[t]||'pb-c'; }
@@ -1122,7 +1142,7 @@ function genQR(containerId,data,size){ const el=document.getElementById(containe
 async function saveCarnet(){
   const nom=document.getElementById('an').value.trim(); const ape=document.getElementById('aa').value.trim();
   if(!nom||!ape){showToast('⚠️ Ingresa nombre y apellidos');return;}
-  const s={id:genId(),nombres:nom,apellidos:ape,type:'student',tipodoc:document.getElementById('atd').value,numdoc:document.getElementById('and').value,cel:document.getElementById('acel').value,correo:document.getElementById('acorreo').value.trim(),nivel:document.getElementById('aniv').value,grado:document.getElementById('agr').value,jornada:document.getElementById('ajor').value,ano:document.getElementById('aano').value,vigencia:document.getElementById('avig').value,fnx:document.getElementById('afnx').value||'0',wallet:document.getElementById('awal').value,photo:admPhoto,theme:admTheme,status:'active',fecha:new Date().toLocaleDateString('es-CO')};
+  const s={id:await genId(),nombres:nom,apellidos:ape,type:'student',tipodoc:document.getElementById('atd').value,numdoc:document.getElementById('and').value,cel:document.getElementById('acel').value,correo:document.getElementById('acorreo').value.trim(),nivel:document.getElementById('aniv').value,grado:document.getElementById('agr').value,jornada:document.getElementById('ajor').value,ano:document.getElementById('aano').value,vigencia:document.getElementById('avig').value,fnx:document.getElementById('afnx').value||'0',wallet:document.getElementById('awal').value,photo:admPhoto,theme:admTheme,status:'active',fecha:new Date().toLocaleDateString('es-CO')};
   localDB.students.push(s); counter.s++; await save();
   renderDash(); renderAllTable(); renderPendTable();
   showToast('✅ Carnet '+s.id+' guardado · Link: '+BASE+'/?id='+s.id);
@@ -1130,7 +1150,7 @@ async function saveCarnet(){
   navigator.clipboard.writeText(BASE+'/?id='+s.id).catch(()=>{});
 }
 
-function saveStaffCarnet(){
+async function saveStaffCarnet(){
   const n=document.getElementById('sn').value.trim();
   const a=document.getElementById('sa').value.trim();
   const td=document.getElementById('std').value;
@@ -1142,13 +1162,32 @@ function saveStaffCarnet(){
   const wal=document.getElementById('swal').value.trim();
   if(!n||!a){showToast('⚠️ Ingresa nombre y apellidos'); return;}
   if(!nd){showToast('⚠️ Ingresa el número de documento'); return;}
-  const id='CORP-P-'+String(counter.p).padStart(3,'0');
-  counter.p++;
+  // Calcular siguiente ID desde Firebase para evitar colisiones
+  let nextNum=1;
+  if(fbEnabled&&fbDB){
+    try{
+      const snap=await fbDB.ref('corposepi/staff').once('value');
+      const raw=snap.val();
+      const lista=(Array.isArray(raw)?raw:Object.values(raw||{})).filter(Boolean);
+      lista.forEach(s=>{
+        const m=String(s.id||'').match(/CORP-P-(\d+)/);
+        if(m) nextNum=Math.max(nextNum,parseInt(m[1])+1);
+      });
+    }catch(e){}
+  } else {
+    // Fallback: máximo del localDB
+    (localDB.staff||[]).filter(Boolean).forEach(s=>{
+      const m=String(s.id||'').match(/CORP-P-(\d+)/);
+      if(m) nextNum=Math.max(nextNum,parseInt(m[1])+1);
+    });
+  }
+  const id='CORP-P-'+String(nextNum).padStart(3,'0');
+  counter.p=nextNum+1;
   const correo=document.getElementById('scorreo').value.trim();
   const s={id,nombres:n,apellidos:a,tipodoc:td,numdoc:nd,cel,correo,cargo,area,vigencia:vig,fnx:'0',wallet:wal,photo:staffPhoto||null,theme:getStaffTheme(cargo),status:'active',fecha:new Date().toLocaleDateString('es-CO'),type:'staff'};
   if(!localDB.staff) localDB.staff=[];
   localDB.staff.push(s);
-  save();
+  await save();
   showToast('✅ Carnet de personal guardado · ID: '+id);
   // Mostrar preview del carnet creado
   try{
