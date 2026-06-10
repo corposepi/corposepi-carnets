@@ -702,12 +702,29 @@ tr:hover td{background:#fafafa;}
 <!-- MODAL EDIT -->
 <div class="modal-ov" id="edit-modal">
   <div class="modal">
-    <div class="modal-t">✏️ Editar carnet</div>
+    <div class="modal-t" id="edit-modal-t">✏️ Editar carnet</div>
     <div class="fgrid">
       <div class="fg"><label class="fg-lbl">Nombres</label><input class="fi" id="e-nom"/></div>
       <div class="fg"><label class="fg-lbl">Apellidos</label><input class="fi" id="e-ape"/></div>
-      <div class="fg ffull"><label class="fg-lbl">Cargo / Programa</label><input class="fi" id="e-prog"/></div>
-      <div class="fg"><label class="fg-lbl">Grado / Área</label><input class="fi" id="e-gr"/></div>
+      <div class="fg ffull"><label class="fg-lbl" id="e-prog-lbl">Nivel / Cargo</label><input class="fi" id="e-prog"/></div>
+      <div class="fg" id="e-gr-wrap">
+        <label class="fg-lbl" id="e-gr-lbl">🎓 Grado</label>
+        <select class="fi" id="e-gr-sel" style="display:none">
+          <option value="">-- Seleccionar --</option>
+          <option value="1°">1° Primero</option>
+          <option value="2°">2° Segundo</option>
+          <option value="3°">3° Tercero</option>
+          <option value="4°">4° Cuarto</option>
+          <option value="5°">5° Quinto</option>
+          <option value="6°">6° Sexto</option>
+          <option value="7°">7° Séptimo</option>
+          <option value="8°">8° Octavo</option>
+          <option value="9°">9° Noveno</option>
+          <option value="10°">10° Décimo</option>
+          <option value="11°">11° Undécimo</option>
+        </select>
+        <input class="fi" id="e-gr" style="display:none" placeholder="Área / Dependencia"/>
+      </div>
       <div class="fg"><label class="fg-lbl">Vigencia</label><input class="fi" id="e-vig"/></div>
       <div class="fg"><label class="fg-lbl">FNX</label><input class="fi" id="e-fnx" type="number"/></div>
       <div class="fg ffull"><label class="fg-lbl">Correo institucional</label><input class="fi" id="e-correo" type="email" placeholder="@corposepi.org"/></div>
@@ -1297,14 +1314,48 @@ async function chStatus(t,i,st){
 }
 
 // ── EDIT MODAL ──
-function openEdit(t,i){ editIdx=i; editType=t; const s=(t==='staff'?localDB.staff:localDB.students)[i]; document.getElementById('e-nom').value=s.nombres||''; document.getElementById('e-ape').value=s.apellidos||''; document.getElementById('e-prog').value=s.cargo||s.nivel||''; document.getElementById('e-gr').value=s.grado||s.area||''; document.getElementById('e-vig').value=s.vigencia||''; document.getElementById('e-fnx').value=s.fnx||0; document.getElementById('e-correo').value=s.correo||''; document.getElementById('e-wal').value=s.wallet||''; document.getElementById('edit-modal').classList.add('show'); }
+function openEdit(t,i){
+  editIdx=i; editType=t;
+  const s=(t==='staff'?localDB.staff:localDB.students)[i];
+  document.getElementById('e-nom').value=s.nombres||'';
+  document.getElementById('e-ape').value=s.apellidos||'';
+  document.getElementById('e-prog').value=t==='staff'?(s.cargo||''):(s.nivel||'');
+  document.getElementById('e-vig').value=s.vigencia||'';
+  document.getElementById('e-fnx').value=s.fnx||0;
+  document.getElementById('e-correo').value=s.correo||'';
+  document.getElementById('e-wal').value=s.wallet||'';
+  // Grado (estudiante) vs Área (staff) — mostrar selector o input según tipo
+  const sel=document.getElementById('e-gr-sel');
+  const inp=document.getElementById('e-gr');
+  const lbl=document.getElementById('e-gr-lbl');
+  const progLbl=document.getElementById('e-prog-lbl');
+  const title=document.getElementById('edit-modal-t');
+  if(t==='student'){
+    sel.style.display=''; inp.style.display='none';
+    lbl.textContent='🎓 Grado'; progLbl.textContent='Nivel (Bachillerato / Básica)';
+    title.textContent='✏️ Editar estudiante: '+(s.nombres||'');
+    // normalizar valor: "10" → "10°", "10°" → "10°"
+    const raw=(s.grado||'').toString().replace('°','').trim();
+    const opt=raw?raw+'°':'';
+    // intentar seleccionar la opción exacta
+    let matched=false;
+    for(const o of sel.options){ if(o.value===opt){sel.value=opt;matched=true;break;} }
+    if(!matched){ sel.value=''; }
+  } else {
+    sel.style.display='none'; inp.style.display='';
+    lbl.textContent='Área / Dependencia'; progLbl.textContent='Cargo';
+    title.textContent='✏️ Editar personal: '+(s.nombres||'');
+    inp.value=s.area||'';
+  }
+  document.getElementById('edit-modal').classList.add('show');
+}
 function closeModal(){ document.getElementById('edit-modal').classList.remove('show'); editIdx=null; editType=null; }
 async function saveEdit(){
   if(editIdx===null)return;
   const arr=editType==='staff'?localDB.staff:localDB.students; const s=arr[editIdx];
   s.nombres=document.getElementById('e-nom').value.trim(); s.apellidos=document.getElementById('e-ape').value.trim();
   if(editType==='staff')s.cargo=document.getElementById('e-prog').value; else s.nivel=document.getElementById('e-prog').value;
-  if(editType==='staff')s.area=document.getElementById('e-gr').value; else s.grado=document.getElementById('e-gr').value;
+  if(editType==='staff')s.area=document.getElementById('e-gr').value; else s.grado=document.getElementById('e-gr-sel').value;
   s.vigencia=document.getElementById('e-vig').value; s.fnx=document.getElementById('e-fnx').value; s.correo=document.getElementById('e-correo').value.trim(); s.wallet=document.getElementById('e-wal').value;
   await save(); renderDash(); renderAllTable(); renderStaffTable(); closeModal(); showToast('✅ Carnet actualizado');
 }
