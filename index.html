@@ -9,6 +9,7 @@
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --corp:#B8410A;--corp2:#8B2F07;--corp3:#E8651A;
@@ -779,6 +780,7 @@ const FB_CONFIG = {
     if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
     fbDB = firebase.database();
     fbEnabled = true;
+    firebase.auth().signInAnonymously().catch(e=>console.error('Auth anónima:',e));
   } catch(e){ console.warn('Firebase init error:', e); }
 
   if(viewId){
@@ -832,6 +834,7 @@ function connectFirebase(cfg){
     if(!firebase.apps.length) firebase.initializeApp(cfg);
     fbDB = firebase.database();
     fbEnabled = true;
+    firebase.auth().signInAnonymously().catch(e=>console.error('Auth anónima:',e));
     // Sync from Firebase to local
     fbDB.ref('corposepi').once('value').then(snap => {
       const data = snap.val();
@@ -938,6 +941,7 @@ async function loadPublicCarnet(id){
     try {
       if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
       const db = firebase.database();
+      await firebase.auth().signInAnonymously().catch(e=>console.error('Auth anónima:',e));
       const snap = await db.ref('corposepi').once('value');
       const data = snap.val();
       if(data){
