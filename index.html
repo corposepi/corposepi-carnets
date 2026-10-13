@@ -903,7 +903,13 @@ async function save(){
           if(idx>=0){
             // Actualizar: Firebase primero (conserva bloques/talleres/acciones),
             // luego local (actualiza nombre, cargo, etc.), saldos de Firebase ganan.
-            result[idx]={...result[idx],...s,fnx:result[idx].fnx??s.fnx,cpi:result[idx].cpi??s.cpi};
+            // Ojo: no dejar claves en undefined (p. ej. cpi cuando nadie lo tiene aún):
+            // Firebase rechaza el set() completo si encuentra un undefined.
+            const m={...result[idx],...s};
+            const fnxLive=result[idx].fnx??s.fnx, cpiLive=result[idx].cpi??s.cpi;
+            if(fnxLive!==undefined) m.fnx=fnxLive; else delete m.fnx;
+            if(cpiLive!==undefined) m.cpi=cpiLive; else delete m.cpi;
+            result[idx]=m;
           } else {
             result.push(s); // nuevo: agregar al final
           }
@@ -911,10 +917,11 @@ async function save(){
         return result;
       }
 
-      const merged = {
+      // JSON ida y vuelta: elimina cualquier undefined restante antes de enviar a Firebase
+      const merged = JSON.parse(JSON.stringify({
         students: mergeList(liveStudents, localDB.students),
         staff:    mergeList(liveStaff,    localDB.staff),
-      };
+      }));
       // Sincronizar localDB con el merged para que quede completo
       localDB.students = merged.students;
       localDB.staff    = merged.staff;
@@ -923,13 +930,17 @@ async function save(){
       dot.classList.add('saved');
       txt.textContent = '✓ Guardado en la nube';
     } catch(e){
+      console.error('Error guardando en Firebase:', e);
       txt.textContent = '⚠️ Solo local';
+      setTimeout(()=>ind.classList.remove('show'), 2500);
+      return false;
     }
   } else {
     dot.classList.add('saved');
     txt.textContent = '✓ Guardado localmente';
   }
   setTimeout(()=>ind.classList.remove('show'), 2500);
+  return true;
 }
 
 // ── PUBLIC CARNET LOADER ──
@@ -1164,8 +1175,9 @@ async function saveCarnet(){
   const nom=document.getElementById('an').value.trim(); const ape=document.getElementById('aa').value.trim();
   if(!nom||!ape){showToast('⚠️ Ingresa nombre y apellidos');return;}
   const s={id:await genId(),nombres:nom,apellidos:ape,type:'student',tipodoc:document.getElementById('atd').value,numdoc:document.getElementById('and').value,cel:document.getElementById('acel').value,correo:document.getElementById('acorreo').value.trim(),nivel:document.getElementById('aniv').value,grado:document.getElementById('agr').value,jornada:document.getElementById('ajor').value,ano:document.getElementById('aano').value,vigencia:document.getElementById('avig').value,fnx:document.getElementById('afnx').value||'0',wallet:document.getElementById('awal').value,photo:admPhoto,theme:admTheme,status:'active',fecha:new Date().toLocaleDateString('es-CO')};
-  localDB.students.push(s); counter.s++; await save();
+  localDB.students.push(s); counter.s++; const okNube=await save();
   renderDash(); renderAllTable(); renderPendTable();
+  if(okNube===false){ showToast('⚠️ El carnet '+s.id+' NO se guardó en la nube (solo en este equipo). Revisa la conexión e inténtalo de nuevo.'); return; }
   showToast('✅ Carnet '+s.id+' guardado · Link: '+BASE+'/?id='+s.id);
   // Auto copy link
   navigator.clipboard.writeText(BASE+'/?id='+s.id).catch(()=>{});
